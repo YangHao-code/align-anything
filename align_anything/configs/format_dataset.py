@@ -193,6 +193,30 @@ class Alpaca(BaseFormatter):
             {'role': 'assistant', 'content': response},
         ], {}
 
+@register_template("HOMEWORK")
+class HOMEWORK(BaseFormatter):
+    system_prompt: str = ""
+    def format_preference_sample(self, raw_sample: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], str]:
+        metrics = raw_sample["overall_response"]
+        better_response = raw_sample[f'response_{int(metrics)}']
+        worse_response = raw_sample[f'response_{3 - int(metrics)}']
+        prompt = raw_sample["question"]
+        better_conversation = [
+            {'role': 'user', 'content': prompt},
+            {'role': 'assistant', 'content': better_response},
+        ]
+
+        worse_conversation = [
+            {'role': 'user', 'content': prompt},
+            {'role': 'assistant', 'content': worse_response},
+        ]
+
+        meta_info = {
+            'better_response': better_response,
+            'worse_response': worse_response,
+        }
+
+        return better_conversation, worse_conversation, meta_info
 
 @register_template('PKUSafeRLHF')
 class PKUSafeRLHF(BaseFormatter):

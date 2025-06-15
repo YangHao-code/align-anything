@@ -16,10 +16,10 @@
 # ==============================================================================
 
 
-MODEL_NAME_OR_PATH="Qwen/Qwen2.5-0.5B-Instruct" # model path
+MODEL_NAME_OR_PATH="/root/autodl-tmp/data/model/model" # model path
 
-TRAIN_DATASETS="../assets/text_to_text/preference" # dpo dataset path
-TRAIN_TEMPLATE="PKUSafeRLHF" # dataset template
+TRAIN_DATASETS="/root/autodl-tmp/data/data/data/train.jsonl" # rm dataset path
+TRAIN_TEMPLATE="HOMEWORK" # dataset template
 TRAIN_SPLIT="train" # split the dataset
 
 OUTPUT_ROOT_DIR=$OUTPUT_ROOT_DIR
@@ -29,7 +29,7 @@ if [ -z "$OUTPUT_ROOT_DIR" ]; then
     OUTPUT_ROOT_DIR="../outputs"
 fi
 
-OUTPUT_DIR="${OUTPUT_ROOT_DIR}/qwen_2_5_dpo" # output dir
+OUTPUT_DIR="${OUTPUT_ROOT_DIR}/qwen_2_5_rm" # output dir
 
 # For wandb online logging
 export WANDB_API_KEY=""
@@ -40,7 +40,7 @@ source ./setup.sh
 # Execute deepspeed command
 deepspeed \
      --master_port ${MASTER_PORT} \
-     --module align_anything.trainers.text_to_text.dpo \
+     --module align_anything.trainers.text_to_text.rm \
      --model_name_or_path ${MODEL_NAME_OR_PATH} \
      --train_template ${TRAIN_TEMPLATE} \
      --train_datasets ${TRAIN_DATASETS} \

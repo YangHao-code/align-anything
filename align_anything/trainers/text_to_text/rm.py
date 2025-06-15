@@ -156,6 +156,10 @@ class RMTrainer(SupervisedTrainerBase):
     def eval(self) -> dict[str, Any]:
         """Evaluate the model on the evaluation dataset."""
         self.logger.print('\n***** Evaluating at the beginning *****')
+        all_chosen_texts = []
+        all_rejected_texts = []
+        all_ch_scores = []
+        all_rj_scores = []
         if self.eval_dataloader is None:
             return {}
 
@@ -186,6 +190,19 @@ class RMTrainer(SupervisedTrainerBase):
             num_total_predictions += batch_size
 
             rewards.extend([higher_end_rewards, lower_end_rewards])
+
+            # 获取当前 batch 的文本
+            better_input_ids, worse_input_ids = batch['input_ids'].chunk(chunks=2, dim=0)
+            higher_reward_texts = self.tokenizer.batch_decode(better_input_ids, skip_special_tokens=True)
+            lower_reward_texts = self.tokenizer.batch_decode(worse_input_ids, skip_special_tokens=True)
+
+            h_rewards = higher_end_rewards.tolist()
+            l_rewards = lower_end_rewards.tolist()
+
+            all_chosen_texts.extend(higher_reward_texts)
+            all_rejected_texts.extend(lower_reward_texts)
+            all_ch_scores.extend(h_rewards)
+            all_rj_scores.extend(l_rewards)
 
         if batch is None:
             self.logger.print('WARNING: `eval_dataloader` is empty.')
@@ -256,6 +273,21 @@ class RMTrainer(SupervisedTrainerBase):
                 ),
                 max_num_rows=max_num_rows,
             )
+            import pandas as pd
+            rows = []
+            for ch, rj, ch_score, rj_score in zip(all_chosen_texts, all_rejected_texts, all_ch_scores, all_rj_scores):
+                rows.append({
+                    "chosen_text": ch,
+                    "rejected_text": rj,
+                    "chosen_reward": ch_score,
+                    "rejected_reward": rj_score,
+                    "reward_diff": float(ch_score) - float(rj_score)
+                })
+
+            output_csv_path = os.path.join(self.cfgs.logger_cfgs.output_dir, "reward_scores.csv")
+            os.makedirs(self.cfgs.logger_cfgs.output_dir, exist_ok=True)
+            pd.DataFrame(rows).to_csv(output_csv_path, index=False)
+            self.logger.print(f"Saved full reward evaluation results to {output_csv_path}")
 
         return info
 
